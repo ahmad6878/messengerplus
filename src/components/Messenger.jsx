@@ -32,6 +32,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
   const remoteAudioRef = useRef(null)
+  const lastPingRef = useRef(Date.now())
 
   const attachRemoteMedia = () => {
     const stream = callRef.current?.remoteStream
@@ -117,6 +118,8 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
         cm.handleSignal(msg)
       } else if (msg.kind === 'accept') {
         setCall((c) => c && { ...c, state: 'connecting' })
+      } else if (msg.kind === 'ping') {
+        lastPingRef.current = Date.now()
       } else if (msg.kind === 'reject' || msg.kind === 'busy') {
         endCall()
         if (msg.kind === 'busy') alert('Пользователь занят')
@@ -203,6 +206,27 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
     }
   }, [call])
 
+  // heartbeat: если собеседник закрыл сайт/браузер — пинги прекратятся и звонок завершится
+  useEffect(() => {
+    if (!call) return
+    lastPingRef.current = Date.now()
+    const iv = setInterval(() => {
+      const a = activeCallRef.current
+      if (!a) return
+      callRef.current.send(a.peerId, { kind: 'ping' })
+      if (Date.now() - lastPingRef.current > 12000) {
+        screenRef.current?.getTracks().forEach((t) => t.stop())
+        screenRef.current = null
+        callRef.current.hangup()
+        activeCallRef.current = null
+        setSharing(false)
+        setCall(null)
+        alert('Связь потеряна')
+      }
+    }, 3000)
+    return () => clearInterval(iv)
+  }, [!!call])
+
   useEffect(() => {
     if (call && (call.state === 'outgoing' || call.state === 'connecting' || call.state === 'connected')) {
       attachLocalVideo()
@@ -257,13 +281,16 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
         audio: false,
       })
       const track = screen.getVideoTracks()[0]
+      track.contentHint = 'detail'
       screenRef.current = screen
       track.onended = () => stopScreenShare()
       await cm.videoSender.replaceTrack(track)
       try {
         const params = cm.videoSender.getParameters()
+        if (!params.encodings || !params.encodings.length) params.encodings = [{}]
+        params.encodings[0].maxBitrate = 1500000
+        params.encodings[0].maxFramerate = 10
         params.degradationPreference = 'maintain-framerate'
-        params.encodings = [{ maxBitrate: 1500000, maxFramerate: 10 }]
         await cm.videoSender.setParameters(params)
       } catch {}
       if (localVideoRef.current) localVideoRef.current.srcObject = screen

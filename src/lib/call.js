@@ -38,7 +38,13 @@ export default class CallManager {
     this.remoteStream = new MediaStream()
 
     this.pc.ontrack = (e) => {
-      e.streams[0].getTracks().forEach((t) => this.remoteStream.addTrack(t))
+      // трек может прийти без привязки к потоку (напр. демонстрация экрана
+      // в аудио-звонке) — добавляем в remoteStream в любом случае
+      if (e.streams && e.streams[0]) {
+        e.streams[0].getTracks().forEach((t) => this.remoteStream.addTrack(t))
+      } else {
+        this.remoteStream.addTrack(e.track)
+      }
       this.onEvent({ kind: 'remote-stream' })
     }
     this.pc.onicecandidate = (e) => {

@@ -471,11 +471,11 @@ input { font-family: inherit; }
   to { transform: scale(1.7); opacity: 0; }
 }
 
-.call-info { text-align: center; }
+.call-info { text-align: center; position: relative; z-index: 10; }
 .call-name { font-size: 26px; font-weight: 700; }
 .call-state { color: var(--text-dim); font-size: 16px; margin-top: 6px; }
 
-.call-controls { display: flex; gap: 18px; }
+.call-controls { display: flex; gap: 18px; position: relative; z-index: 10; }
 
 .call-btn {
   width: 66px;
