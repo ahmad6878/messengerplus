@@ -97,7 +97,7 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
         <div className="call-state">{stateText}</div>
       </div>
 
-      <div className="call-controls">
+      <div className={'call-controls' + (sharing ? ' compact' : '')}>
         {call.state === 'ringing' ? (
           <>
             <button className="call-btn danger" title="Отклонить" onClick={onReject}>
@@ -118,7 +118,7 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
                 )}
               </button>
             )}
-            {call.video && call.state !== 'failed' && (
+            {call.state !== 'failed' && (
               <button className={'call-btn ' + (camOff ? 'warn' : 'ghost')} title="Камера" onClick={toggleCam}>
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
               </button>

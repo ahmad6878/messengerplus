@@ -37,8 +37,14 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   const attachRemoteMedia = () => {
     const stream = callRef.current?.remoteStream
     if (!stream) return
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream
-    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = stream
+      remoteVideoRef.current.play?.().catch(() => {})
+    }
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = stream
+      remoteAudioRef.current.play?.().catch(() => {})
+    }
   }
 
   // ---------- список чатов ----------
@@ -243,12 +249,36 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
     }
   }
 
-  const toggleCam = () => {
-    const s = callRef.current.localStream
-    if (s) {
+  const toggleCam = async () => {
+    const cm = callRef.current
+    const s = cm?.localStream
+    if (!s) return
+    const vTrack = s.getVideoTracks()[0]
+    if (vTrack) {
+      // камера уже есть — просто вкл/выкл
       const next = !camOff
-      s.getVideoTracks().forEach((t) => (t.enabled = !next))
+      vTrack.enabled = !next
       setCamOff(next)
+    } else {
+      // аудио-звонок — включаем камеру на лету через запасной видео-трек
+      try {
+        const cam = await navigator.mediaDevices.getUserMedia({
+          video: { width: { max: 1280 }, height: { max: 720 }, frameRate: { max: 24 } },
+        })
+        const track = cam.getVideoTracks()[0]
+        s.addTrack(track)
+        await cm.videoSender.replaceTrack(track)
+        setCall((c) => c && { ...c, video: true })
+        const a = activeCallRef.current
+        if (a) {
+          cm.send(a.peerId, { kind: 'screen', on: true })
+          cm.send(a.peerId, { kind: 'ping' })
+        }
+        setCamOff(false)
+        attachLocalVideo()
+      } catch {
+        alert('Нет доступа к камере')
+      }
     }
   }
 
@@ -285,14 +315,6 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
       screenRef.current = screen
       track.onended = () => stopScreenShare()
       await cm.videoSender.replaceTrack(track)
-      try {
-        const params = cm.videoSender.getParameters()
-        if (!params.encodings || !params.encodings.length) params.encodings = [{}]
-        params.encodings[0].maxBitrate = 1500000
-        params.encodings[0].maxFramerate = 10
-        params.degradationPreference = 'maintain-framerate'
-        await cm.videoSender.setParameters(params)
-      } catch {}
       if (localVideoRef.current) localVideoRef.current.srcObject = screen
       setSharing(true)
       const a = activeCallRef.current

@@ -477,6 +477,17 @@ input { font-family: inherit; }
 
 .call-controls { display: flex; gap: 18px; position: relative; z-index: 10; }
 
+/* во время демонстрации кнопки меньше и уходят вниз */
+.call-controls.compact {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  gap: 12px;
+}
+.call-controls.compact .call-btn { width: 46px; height: 46px; min-width: 46px; }
+.call-controls.compact .call-btn svg { width: 19px; height: 19px; }
+
 .call-btn {
   width: 66px;
   height: 66px;
