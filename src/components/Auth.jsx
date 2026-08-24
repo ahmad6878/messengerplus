@@ -85,7 +85,7 @@ export default function Auth() {
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Ахмад"
+                placeholder=""
                 maxLength={30}
               />
             </label>
