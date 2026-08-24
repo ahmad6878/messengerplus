@@ -499,18 +499,19 @@ input { font-family: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: #2a3552; }
 
 /* ---------- Ğ¼Ğ¾Ğ±Ğ¸Ğ»ÑŒĞ½Ğ°Ñ Ğ²ĞµÑ€ÑĞ¸Ñ ---------- */
+.mobile-back { display: none; }
+
 @media (max-width: 720px) {
-  .app { position: relative; }
-  .sidebar { width: 100%; min-width: 0; }
-  .sidebar + .chat, .chat-placeholder {
-    display: none;
-  }
-  .app:has(.chat:not([style*='display: none'])) .sidebar { display: none; }
+  .app:not(.mobile-chat) .chat,
+  .app:not(.mobile-chat) .chat-placeholder { display: none; }
+  .app.mobile-chat .sidebar { display: none; }
+  .mobile-back { display: flex; }
   .bubble { max-width: 82%; }
   .local-video { width: 110px; }
+  .sidebar { width: 100%; min-width: 0; }
 }
 
-/* ==================== ÑÂÅÒËÀß ÒÅÌÀ ==================== */
+/* ==================== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ==================== */
 [data-theme='light'] {
   --bg: #eef1f8;
   --bg-2: #ffffff;
@@ -527,7 +528,7 @@ input { font-family: inherit; }
 [data-theme='light'] .call-overlay { background: rgba(240, 243, 250, 0.92); }
 [data-theme='light'] .call-btn.ghost { background: #dfe5f0; }
 
-/* ==================== ÔÎÍÛ ×ÀÒÀ ==================== */
+/* ==================== ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ==================== */
 .messages.bg-default {
   background:
     radial-gradient(900px 500px at 80% 0%, rgba(99, 102, 241, 0.05), transparent 60%),
@@ -556,7 +557,7 @@ input { font-family: inherit; }
 .messages.bg-aurora .empty, .messages.bg-sunset .empty,
 .messages.bg-ocean .empty, .messages.bg-forest .empty { color: rgba(255,255,255,0.85); }
 
-/* ==================== ÃÎËÎÑÎÂÎÉ ÏËÅÅĞ ==================== */
+/* ==================== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ==================== */
 .voice-player {
   display: flex;
   align-items: center;
@@ -611,7 +612,7 @@ input { font-family: inherit; }
 }
 .voice-rate:hover { background: rgba(255, 255, 255, 0.35); }
 
-/* ïëååğ â ÷óæîì ñîîáùåíèè (ñâåòëûå ıëåìåíòû íà ò¸ìíîì ïóçûğå) */
+/* ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½) */
 .bubble-theirs .voice-play { background: rgba(255,255,255,0.12); }
 [data-theme='light'] .bubble-theirs .voice-play { background: var(--bg-3); color: var(--text); }
 .bubble-theirs .voice-bar { background: rgba(255,255,255,0.35); }
@@ -620,7 +621,7 @@ input { font-family: inherit; }
 .bubble-theirs .voice-rate { background: rgba(255,255,255,0.12); }
 [data-theme='light'] .bubble-theirs .voice-rate { background: var(--bg-3); color: var(--text); }
 
-/* ==================== ĞÅÄÀÊÒÎĞ ÔÎÒÎ ==================== */
+/* ==================== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ==================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -736,7 +737,7 @@ input { font-family: inherit; }
 .lightbox-toolbar .icon-btn { color: #fff; }
 .lightbox-toolbar .icon-btn:hover { background: rgba(255,255,255,0.15); }
 
-/* ==================== ÍÀÑÒĞÎÉÊÈ ==================== */
+/* ==================== ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ==================== */
 .settings-modal {
   width: 100%;
   max-width: 480px;

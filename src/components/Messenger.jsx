@@ -226,7 +226,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   }, [search, chats])
 
   return (
-    <div className="app">
+    <div className={'app' + (active ? ' mobile-chat' : '')}>
       <aside className="sidebar">
         <div className="me">
           <div className="avatar">{(profile.display_name || profile.username)[0].toUpperCase()}</div>
@@ -300,6 +300,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
           peer={active}
           bg={bg}
           onCall={startCall}
+          onBack={() => setActive(null)}
         />
       ) : (
         <div className="screen-center chat-placeholder">

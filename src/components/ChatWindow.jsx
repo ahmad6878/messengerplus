@@ -4,7 +4,7 @@ import VoicePlayer from './VoicePlayer.jsx'
 import PhotoEditor from './PhotoEditor.jsx'
 import Lightbox from './Lightbox.jsx'
 
-export default function ChatWindow({ myId, peer, bg, onCall }) {
+export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [recording, setRecording] = useState(false)
@@ -134,6 +134,9 @@ export default function ChatWindow({ myId, peer, bg, onCall }) {
   return (
     <main className="chat">
       <header className="chat-header">
+        <button className="icon-btn mobile-back" title="Назад" onClick={onBack}>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        </button>
         <div className="avatar">{(peer.display_name || peer.username)[0].toUpperCase()}</div>
         <div>
           <div className="chat-header-name">{peer.display_name || peer.username}</div>
