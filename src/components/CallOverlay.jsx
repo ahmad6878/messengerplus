@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, muted, toggleMute, camOff, toggleCam }) {
+export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam }) {
   const [seconds, setSeconds] = useState(0)
   const startedRef = useRef(false)
 
@@ -32,6 +32,7 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
         </div>
       ) : (
         <div className="call-avatar-wrap">
+          <audio ref={remoteAudioRef} autoPlay />
           <div className="call-avatar">{(peer.display_name || peer.username || '?')[0].toUpperCase()}</div>
           <div className="call-pulse" />
         </div>

@@ -158,7 +158,7 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
         )}
         {messages.map((m) => (
           <div key={m.id} className={'bubble-row ' + (m.sender_id === myId ? 'mine' : 'theirs')}>
-            <div className={'bubble ' + (m.sender_id === myId ? 'bubble-mine' : 'bubble-theirs')}>
+            <div className={'bubble ' + (m.sender_id === myId ? 'bubble-mine' : 'bubble-theirs') + (m.type === 'audio' ? ' bubble-voice' : '')}>
               {m.type === 'text' && <div className="bubble-text">{m.content}</div>}
               {m.type === 'image' && (
                 <img

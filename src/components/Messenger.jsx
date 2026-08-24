@@ -29,6 +29,14 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   const activeCallRef = useRef(null) // {peerId, video}
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
+  const remoteAudioRef = useRef(null)
+
+  const attachRemoteMedia = () => {
+    const stream = callRef.current?.remoteStream
+    if (!stream) return
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream
+  }
 
   // ---------- список чатов ----------
   const loadChats = async () => {
@@ -116,9 +124,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
         if (msg.data === 'connected') setCall((c) => c && { ...c, state: 'connected' })
         if (msg.data === 'failed') setCall((c) => c && { ...c, state: 'failed' })
       } else if (msg.kind === 'remote-stream') {
-        if (remoteVideoRef.current && cm.remoteStream) {
-          remoteVideoRef.current.srcObject = cm.remoteStream
-        }
+        attachRemoteMedia()
       }
     }
     return () => cm.destroy()
@@ -191,6 +197,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   useEffect(() => {
     if (call && (call.state === 'outgoing' || call.state === 'connecting' || call.state === 'connected')) {
       attachLocalVideo()
+      attachRemoteMedia()
     }
   }, [call])
 
@@ -323,6 +330,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
           onHangup={endCall}
           localVideoRef={localVideoRef}
           remoteVideoRef={remoteVideoRef}
+          remoteAudioRef={remoteAudioRef}
           muted={muted}
           toggleMute={toggleMute}
           camOff={camOff}
