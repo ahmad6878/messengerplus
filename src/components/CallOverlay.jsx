@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam }) {
+export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam, sharing, toggleScreen, canShare }) {
   const [seconds, setSeconds] = useState(0)
   const startedRef = useRef(false)
 
@@ -67,6 +67,15 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
             {call.video && call.state !== 'failed' && (
               <button className={'call-btn ' + (camOff ? 'warn' : 'ghost')} title="Камера" onClick={toggleCam}>
                 <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+              </button>
+            )}
+            {canShare && call.state !== 'failed' && (
+              <button
+                className={'call-btn ' + (sharing ? 'warn' : 'ghost')}
+                title={sharing ? 'Остановить демонстрацию' : 'Демонстрация экрана'}
+                onClick={toggleScreen}
+              >
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-8-2h-2v-3H8l4-4 4 4h-3z"/></svg>
               </button>
             )}
             <button className="call-btn danger" title="Завершить" onClick={onHangup}>

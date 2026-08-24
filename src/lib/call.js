@@ -57,6 +57,13 @@ export default class CallManager {
       } else throw new Error('Нет доступа к микрофону')
     }
     this.localStream.getTracks().forEach((t) => this.pc.addTrack(t, this.localStream))
+    // видео-отправитель есть всегда — тогда замену трека (демонстрация экрана)
+    // можно делать без пересогласования соединения
+    if (video) {
+      this.videoSender = this.pc.getSenders().find((s) => s.track && s.track.kind === 'video')
+    } else {
+      this.videoSender = this.pc.addTransceiver('video', { direction: 'sendrecv' }).sender
+    }
     return this.localStream
   }
 
@@ -108,6 +115,7 @@ export default class CallManager {
     this.localStream = null
     this.remoteStream = null
     this.peerId = null
+    this.videoSender = null
     this.pendingIce = []
   }
 

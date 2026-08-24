@@ -14,6 +14,8 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   const [call, setCall] = useState(null) // {peer, video, state}
   const [muted, setMuted] = useState(false)
   const [camOff, setCamOff] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const screenRef = useRef(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('mp-theme') || 'dark')
   const [bg, setBg] = useState(() => localStorage.getItem('mp-bg') || 'default')
@@ -174,8 +176,11 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
   const endCall = () => {
     const a = activeCallRef.current
     if (a) callRef.current.send(a.peerId, { kind: 'hangup' })
+    screenRef.current?.getTracks().forEach((t) => t.stop())
+    screenRef.current = null
     callRef.current.hangup()
     activeCallRef.current = null
+    setSharing(false)
     setCall(null)
   }
 
@@ -217,6 +222,47 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
       s.getVideoTracks().forEach((t) => (t.enabled = !next))
       setCamOff(next)
     }
+  }
+
+  const stopScreenShare = async () => {
+    const cm = callRef.current
+    screenRef.current?.getTracks().forEach((t) => t.stop())
+    screenRef.current = null
+    const camTrack = cm?.localStream?.getVideoTracks()[0]
+    try { await cm?.videoSender?.replaceTrack(camTrack || null) } catch {}
+    if (localVideoRef.current && cm?.localStream) {
+      localVideoRef.current.srcObject = cm.localStream
+    }
+    setSharing(false)
+  }
+
+  const toggleScreenShare = async () => {
+    const cm = callRef.current
+    if (!cm?.pc) return
+    if (sharing) { stopScreenShare(); return }
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      alert('Демонстрация экрана не поддерживается на этом устройстве (на телефонах она недоступна в браузерах)')
+      return
+    }
+    try {
+      // ограничение качества: 10 fps, максимум 1080p, битрейт 1.5 Мбит/с
+      const screen = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { max: 10 }, width: { max: 1920 }, height: { max: 1080 } },
+        audio: false,
+      })
+      const track = screen.getVideoTracks()[0]
+      screenRef.current = screen
+      track.onended = () => stopScreenShare()
+      await cm.videoSender.replaceTrack(track)
+      try {
+        const params = cm.videoSender.getParameters()
+        params.degradationPreference = 'maintain-framerate'
+        params.encodings = [{ maxBitrate: 1500000, maxFramerate: 10 }]
+        await cm.videoSender.setParameters(params)
+      } catch {}
+      if (localVideoRef.current) localVideoRef.current.srcObject = screen
+      setSharing(true)
+    } catch { /* пользователь отменил выбор окна */ }
   }
 
   const openChat = (p) => {
@@ -335,6 +381,9 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
           toggleMute={toggleMute}
           camOff={camOff}
           toggleCam={toggleCam}
+          sharing={sharing}
+          toggleScreen={toggleScreenShare}
+          canShare={!!navigator.mediaDevices?.getDisplayMedia}
         />
       )}
 
