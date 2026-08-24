@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import VoicePlayer from './VoicePlayer.jsx'
+import VideoPlayer from './VideoPlayer.jsx'
 import PhotoEditor from './PhotoEditor.jsx'
 import Lightbox from './Lightbox.jsx'
 
@@ -14,6 +15,7 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
   const [lightbox, setLightbox] = useState(null)
   const listRef = useRef(null)
   const fileRef = useRef(null)
+  const videoRef = useRef(null)
   const recorderRef = useRef(null)
   const chunksRef = useRef([])
   const timerRef = useRef(null)
@@ -98,6 +100,20 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
     if (url) await send({ type: 'image', file_url: url })
   }
 
+  const sendVideo = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    if (file.size > 100 * 1024 * 1024) { alert('Максимальный размер видео — 100 МБ'); return }
+    setSending(true)
+    try {
+      const url = await uploadFile(file, file.name.split('.').pop() || 'mp4')
+      if (url) await send({ type: 'video', file_url: url })
+    } finally {
+      setSending(false)
+    }
+  }
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -166,8 +182,13 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
                   alt="фото"
                   className="bubble-img clickable"
                   loading="lazy"
-                  onClick={() => setLightbox(m.file_url)}
+                  onClick={() => setLightbox({ url: m.file_url, video: false })}
                 />
+              )}
+              {m.type === 'video' && (
+                <div className="bubble-video">
+                  <VideoPlayer url={m.file_url} />
+                </div>
               )}
               {m.type === 'audio' && <VoicePlayer url={m.file_url} mine={m.sender_id === myId} />}
               <div className="bubble-time">{fmtTime(m.created_at)}</div>
@@ -192,6 +213,10 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
               <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
             </button>
             <input ref={fileRef} type="file" accept="image/*" hidden onChange={sendPhoto} />
+            <button className="icon-btn" title="Отправить видео" onClick={() => videoRef.current?.click()}>
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg>
+            </button>
+            <input ref={videoRef} type="file" accept="video/*" hidden onChange={sendVideo} />
             <form className="composer-form" onSubmit={sendText}>
               <input
                 value={text}
@@ -217,7 +242,9 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
         />
       )}
 
-      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
+      {lightbox && (
+        <Lightbox url={lightbox.url} video={lightbox.video} onClose={() => setLightbox(null)} />
+      )}
     </main>
   )
 }

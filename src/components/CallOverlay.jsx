@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam, sharing, toggleScreen, canShare, localHasVideo }) {
+export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam, sharing, remoteSharing, toggleScreen, canShare, localHasVideo }) {
   const [seconds, setSeconds] = useState(0)
   const startedRef = useRef(false)
   const audioCtxRef = useRef(null)
@@ -97,7 +97,7 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
         <div className="call-state">{stateText}</div>
       </div>
 
-      <div className={'call-controls' + (sharing ? ' compact' : '')}>
+      <div className={'call-controls' + (sharing || remoteSharing ? ' compact' : '')}>
         {call.state === 'ringing' ? (
           <>
             <button className="call-btn danger" title="Отклонить" onClick={onReject}>

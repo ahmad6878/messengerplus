@@ -136,6 +136,10 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
         if (msg.data === 'failed') setCall((c) => c && { ...c, state: 'failed' })
       } else if (msg.kind === 'screen') {
         // собеседник включил демонстрацию — показываем видео-режим даже в аудио-звонке
+        setCall((c) => c && { ...c, video: true, remoteSharing: msg.on })
+        attachRemoteMedia()
+      } else if (msg.kind === 'video') {
+        // собеседник включил камеру в аудио-звонке
         setCall((c) => c && { ...c, video: true })
         attachRemoteMedia()
       } else if (msg.kind === 'remote-stream') {
@@ -270,10 +274,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
         await cm.videoSender.replaceTrack(track)
         setCall((c) => c && { ...c, video: true })
         const a = activeCallRef.current
-        if (a) {
-          cm.send(a.peerId, { kind: 'screen', on: true })
-          cm.send(a.peerId, { kind: 'ping' })
-        }
+        if (a) cm.send(a.peerId, { kind: 'video' })
         setCamOff(false)
         attachLocalVideo()
       } catch {
@@ -392,6 +393,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
                     {c.last
                       ? c.last.type === 'text' ? c.last.content
                         : c.last.type === 'image' ? '📷 Фото'
+                        : c.last.type === 'video' ? '🎬 Видео'
                         : '🎤 Голосовое сообщение'
                       : 'Начните переписку'}
                   </div>
@@ -439,6 +441,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
           camOff={camOff}
           toggleCam={toggleCam}
           sharing={sharing}
+          remoteSharing={call.remoteSharing}
           toggleScreen={toggleScreenShare}
           canShare={!!navigator.mediaDevices?.getDisplayMedia}
           localHasVideo={!!callRef.current?.localStream?.getVideoTracks?.().length}
