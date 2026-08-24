@@ -1,6 +1,9 @@
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+  { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
 ]
 
 export default class CallManager {
@@ -11,6 +14,7 @@ export default class CallManager {
     this.localStream = null
     this.remoteStream = null
     this.peerId = null
+    this.pendingIce = []
     this.onEvent = () => {}
   }
 
@@ -56,29 +60,43 @@ export default class CallManager {
     return this.localStream
   }
 
+  async flushIce() {
+    const list = this.pendingIce
+    this.pendingIce = []
+    for (const c of list) {
+      try { await this.pc.addIceCandidate(c) } catch { /* гонки ICE не критичны */ }
+    }
+  }
+
   async start(peerId, video) {
     this.peerId = peerId
     await this.createPeer(video)
     const offer = await this.pc.createOffer()
     await this.pc.setLocalDescription(offer)
+    await this.flushIce()
     await this.send(peerId, { kind: 'offer', data: offer, video })
   }
 
   async accept(offer, video) {
     await this.createPeer(video)
     await this.pc.setRemoteDescription(offer)
+    await this.flushIce()
     const answer = await this.pc.createAnswer()
     await this.pc.setLocalDescription(answer)
     await this.send(this.peerId, { kind: 'answer', data: answer })
   }
 
   async handleSignal(msg) {
-    if (!this.pc) return
     try {
-      if (msg.kind === 'answer') {
+      if (msg.kind === 'answer' && this.pc) {
         await this.pc.setRemoteDescription(msg.data)
       } else if (msg.kind === 'ice' && msg.data) {
-        await this.pc.addIceCandidate(msg.data)
+        if (!this.pc) {
+          // pc ещё не создан — буферизуем, чтобы кандидаты не потерялись
+          this.pendingIce.push(msg.data)
+        } else {
+          await this.pc.addIceCandidate(msg.data)
+        }
       }
     } catch { /* игнорируем гонки ICE */ }
   }
@@ -90,6 +108,7 @@ export default class CallManager {
     this.localStream = null
     this.remoteStream = null
     this.peerId = null
+    this.pendingIce = []
   }
 
   destroy() {

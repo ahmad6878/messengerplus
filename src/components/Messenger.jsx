@@ -2,17 +2,28 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import ChatWindow from './ChatWindow.jsx'
 import CallOverlay from './CallOverlay.jsx'
+import Settings from './Settings.jsx'
 import CallManager from '../lib/call.js'
 
-export default function Messenger({ session, profile }) {
+export default function Messenger({ session, profile, onProfileUpdate }) {
   const myId = session.user.id
   const [search, setSearch] = useState('')
   const [results, setResults] = useState([])
-  const [chats, setChats] = useState([]) // [{profile, lastMessage, lastAt}]
+  const [chats, setChats] = useState([]) // [{profile, last}]
   const [active, setActive] = useState(null) // профиль собеседника
   const [call, setCall] = useState(null) // {peer, video, state}
   const [muted, setMuted] = useState(false)
   const [camOff, setCamOff] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [theme, setTheme] = useState(() => localStorage.getItem('mp-theme') || 'dark')
+  const [bg, setBg] = useState(() => localStorage.getItem('mp-bg') || 'default')
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('mp-theme', theme)
+  }, [theme])
+
+  useEffect(() => { localStorage.setItem('mp-bg', bg) }, [bg])
 
   const callRef = useRef(null)
   const activeCallRef = useRef(null) // {peerId, video}
@@ -80,7 +91,6 @@ export default function Messenger({ session, profile }) {
     cm.listen()
     cm.onEvent = async (msg) => {
       if (msg.kind === 'offer') {
-        // входящий звонок (или второй offer — игнорируем если уже звоним)
         if (activeCallRef.current) {
           cm.send(msg.from, { kind: 'busy' })
           return
@@ -163,6 +173,21 @@ export default function Messenger({ session, profile }) {
     setCall(null)
   }
 
+  // если соединение не установилось за 25 секунд — сбрасываем
+  useEffect(() => {
+    if (!call) return
+    if (call.state === 'outgoing' || call.state === 'connecting') {
+      const t = setTimeout(() => {
+        setCall((c) =>
+          c && (c.state === 'outgoing' || c.state === 'connecting')
+            ? { ...c, state: 'failed' }
+            : c
+        )
+      }, 25000)
+      return () => clearTimeout(t)
+    }
+  }, [call])
+
   useEffect(() => {
     if (call && (call.state === 'outgoing' || call.state === 'connecting' || call.state === 'connected')) {
       attachLocalVideo()
@@ -209,6 +234,9 @@ export default function Messenger({ session, profile }) {
             <div className="me-name">{profile.display_name || profile.username}</div>
             <div className="me-username">@{profile.username}</div>
           </div>
+          <button className="icon-btn" title="Настройки" onClick={() => setSettingsOpen(true)}>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          </button>
           <button className="icon-btn" title="Выйти" onClick={() => supabase.auth.signOut()}>
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
           </button>
@@ -270,6 +298,7 @@ export default function Messenger({ session, profile }) {
           myId={myId}
           me={profile}
           peer={active}
+          bg={bg}
           onCall={startCall}
         />
       ) : (
@@ -297,6 +326,18 @@ export default function Messenger({ session, profile }) {
           toggleMute={toggleMute}
           camOff={camOff}
           toggleCam={toggleCam}
+        />
+      )}
+
+      {settingsOpen && (
+        <Settings
+          profile={profile}
+          onClose={() => setSettingsOpen(false)}
+          onProfileUpdate={onProfileUpdate}
+          theme={theme}
+          setTheme={setTheme}
+          bg={bg}
+          setBg={setBg}
         />
       )}
     </div>

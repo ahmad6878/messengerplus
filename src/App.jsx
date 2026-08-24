@@ -35,5 +35,5 @@ export default function App() {
     )
   }
 
-  return session && profile ? <Messenger session={session} profile={profile} /> : <Auth />
+  return session && profile ? <Messenger session={session} profile={profile} onProfileUpdate={setProfile} /> : <Auth />
 }

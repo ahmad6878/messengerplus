@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
+import VoicePlayer from './VoicePlayer.jsx'
+import PhotoEditor from './PhotoEditor.jsx'
+import Lightbox from './Lightbox.jsx'
 
-export default function ChatWindow({ myId, peer, onCall }) {
+export default function ChatWindow({ myId, peer, bg, onCall }) {
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
   const [recording, setRecording] = useState(false)
   const [recSeconds, setRecSeconds] = useState(0)
   const [sending, setSending] = useState(false)
+  const [editPhoto, setEditPhoto] = useState(null)
+  const [lightbox, setLightbox] = useState(null)
   const listRef = useRef(null)
   const fileRef = useRef(null)
   const recorderRef = useRef(null)
@@ -79,12 +84,17 @@ export default function ChatWindow({ myId, peer, onCall }) {
     return data.publicUrl
   }
 
-  const sendPhoto = async (e) => {
+  const sendPhoto = (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (file.size > 10 * 1024 * 1024) { alert('Максимальный размер — 10 МБ'); return }
-    const url = await uploadFile(file, file.name.split('.').pop() || 'jpg')
+    if (file.size > 20 * 1024 * 1024) { alert('Максимальный размер — 20 МБ'); return }
+    setEditPhoto(file)
+  }
+
+  const onPhotoEdited = async (blob, ext) => {
+    setEditPhoto(null)
+    const url = await uploadFile(blob, ext)
     if (url) await send({ type: 'image', file_url: url })
   }
 
@@ -139,7 +149,7 @@ export default function ChatWindow({ myId, peer, onCall }) {
         </div>
       </header>
 
-      <div className="messages" ref={listRef}>
+      <div className={`messages bg-${bg}`} ref={listRef}>
         {messages.length === 0 && (
           <div className="empty">Сообщений пока нет — напишите первым!</div>
         )}
@@ -148,11 +158,15 @@ export default function ChatWindow({ myId, peer, onCall }) {
             <div className={'bubble ' + (m.sender_id === myId ? 'bubble-mine' : 'bubble-theirs')}>
               {m.type === 'text' && <div className="bubble-text">{m.content}</div>}
               {m.type === 'image' && (
-                <a href={m.file_url} target="_blank" rel="noreferrer">
-                  <img src={m.file_url} alt="фото" className="bubble-img" loading="lazy" />
-                </a>
+                <img
+                  src={m.file_url}
+                  alt="фото"
+                  className="bubble-img clickable"
+                  loading="lazy"
+                  onClick={() => setLightbox(m.file_url)}
+                />
               )}
-              {m.type === 'audio' && <audio src={m.file_url} controls className="bubble-audio" />}
+              {m.type === 'audio' && <VoicePlayer url={m.file_url} mine={m.sender_id === myId} />}
               <div className="bubble-time">{fmtTime(m.created_at)}</div>
             </div>
           </div>
@@ -191,6 +205,16 @@ export default function ChatWindow({ myId, peer, onCall }) {
           </>
         )}
       </footer>
+
+      {editPhoto && (
+        <PhotoEditor
+          file={editPhoto}
+          onCancel={() => setEditPhoto(null)}
+          onDone={onPhotoEdited}
+        />
+      )}
+
+      {lightbox && <Lightbox url={lightbox} onClose={() => setLightbox(null)} />}
     </main>
   )
 }
