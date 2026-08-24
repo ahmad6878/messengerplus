@@ -74,7 +74,7 @@ export default function Auth() {
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9]/g, ''))}
-              placeholder="например, ahmad2007"
+              placeholder=""
               autoFocus
             />
           </label>
