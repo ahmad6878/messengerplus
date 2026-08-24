@@ -125,6 +125,10 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
       } else if (msg.kind === 'state') {
         if (msg.data === 'connected') setCall((c) => c && { ...c, state: 'connected' })
         if (msg.data === 'failed') setCall((c) => c && { ...c, state: 'failed' })
+      } else if (msg.kind === 'screen') {
+        // собеседник включил демонстрацию — показываем видео-режим даже в аудио-звонке
+        setCall((c) => c && { ...c, video: true })
+        attachRemoteMedia()
       } else if (msg.kind === 'remote-stream') {
         attachRemoteMedia()
       }
@@ -234,6 +238,8 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
       localVideoRef.current.srcObject = cm.localStream
     }
     setSharing(false)
+    const a = activeCallRef.current
+    if (a) cm.send(a.peerId, { kind: 'screen', on: false })
   }
 
   const toggleScreenShare = async () => {
@@ -262,6 +268,8 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
       } catch {}
       if (localVideoRef.current) localVideoRef.current.srcObject = screen
       setSharing(true)
+      const a = activeCallRef.current
+      if (a) cm.send(a.peerId, { kind: 'screen', on: true })
     } catch { /* пользователь отменил выбор окна */ }
   }
 
@@ -384,6 +392,7 @@ export default function Messenger({ session, profile, onProfileUpdate }) {
           sharing={sharing}
           toggleScreen={toggleScreenShare}
           canShare={!!navigator.mediaDevices?.getDisplayMedia}
+          localHasVideo={!!callRef.current?.localStream?.getVideoTracks?.().length}
         />
       )}
 

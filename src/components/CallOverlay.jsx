@@ -1,8 +1,60 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam, sharing, toggleScreen, canShare }) {
+export default function CallOverlay({ call, profile, peer, onAccept, onReject, onHangup, localVideoRef, remoteVideoRef, remoteAudioRef, muted, toggleMute, camOff, toggleCam, sharing, toggleScreen, canShare, localHasVideo }) {
   const [seconds, setSeconds] = useState(0)
   const startedRef = useRef(false)
+  const audioCtxRef = useRef(null)
+  const ringTimerRef = useRef(null)
+
+  // ---------- мелодия звонка ----------
+  useEffect(() => {
+    const ringing = call.state === 'ringing' || call.state === 'outgoing'
+    if (!ringing) {
+      clearInterval(ringTimerRef.current)
+      return
+    }
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    const ctx = audioCtxRef.current
+    ctx.resume()
+    const incoming = call.state === 'ringing'
+
+    const beep = (freq, at, dur, vol = 0.07) => {
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.type = 'sine'
+      o.frequency.value = freq
+      g.gain.setValueAtTime(0, at)
+      g.gain.linearRampToValueAtTime(vol, at + 0.04)
+      g.gain.setValueAtTime(vol, at + dur - 0.04)
+      g.gain.linearRampToValueAtTime(0, at + dur)
+      o.connect(g)
+      g.connect(ctx.destination)
+      o.start(at)
+      o.stop(at + dur)
+    }
+
+    const cycle = () => {
+      const t = ctx.currentTime
+      if (incoming) {
+        beep(440, t, 0.4)
+        beep(440, t + 0.6, 0.4)
+      } else {
+        beep(440, t, 0.7)
+      }
+    }
+
+    cycle()
+    ringTimerRef.current = setInterval(cycle, incoming ? 2000 : 3000)
+    return () => clearInterval(ringTimerRef.current)
+  }, [call.state])
+
+  // остановка звука при размонтировании
+  useEffect(() => () => {
+    clearInterval(ringTimerRef.current)
+    audioCtxRef.current?.close()
+  }, [])
 
   useEffect(() => {
     if (call.state === 'connected' && !startedRef.current) {
@@ -28,7 +80,9 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
       {call.video && call.state !== 'ringing' ? (
         <div className="call-video-wrap">
           <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
-          <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
+          {localHasVideo && (
+            <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
+          )}
         </div>
       ) : (
         <div className="call-avatar-wrap">
