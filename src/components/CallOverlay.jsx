@@ -92,10 +92,12 @@ export default function CallOverlay({ call, profile, peer, onAccept, onReject, o
         </div>
       )}
 
-      <div className="call-info">
-        <div className="call-name">{peer.display_name || peer.username}</div>
-        <div className="call-state">{stateText}</div>
-      </div>
+      {(sharing || remoteSharing) && call.state === 'connected' ? null : (
+        <div className="call-info">
+          <div className="call-name">{peer.display_name || peer.username}</div>
+          <div className="call-state">{stateText}</div>
+        </div>
+      )}
 
       <div className={'call-controls' + (sharing || remoteSharing ? ' compact' : '')}>
         {call.state === 'ringing' ? (

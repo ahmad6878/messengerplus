@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import VoicePlayer from './VoicePlayer.jsx'
-import VideoPlayer from './VideoPlayer.jsx'
 import PhotoEditor from './PhotoEditor.jsx'
+import VideoEditor from './VideoEditor.jsx'
 import Lightbox from './Lightbox.jsx'
 
 export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
@@ -12,6 +12,7 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
   const [recSeconds, setRecSeconds] = useState(0)
   const [sending, setSending] = useState(false)
   const [editPhoto, setEditPhoto] = useState(null)
+  const [editVideo, setEditVideo] = useState(null)
   const [lightbox, setLightbox] = useState(null)
   const listRef = useRef(null)
   const fileRef = useRef(null)
@@ -100,14 +101,19 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
     if (url) await send({ type: 'image', file_url: url })
   }
 
-  const sendVideo = async (e) => {
+  const sendVideo = (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    if (file.size > 100 * 1024 * 1024) { alert('Максимальный размер видео — 100 МБ'); return }
+    if (file.size > 200 * 1024 * 1024) { alert('Максимальный размер видео — 200 МБ'); return }
+    setEditVideo(file)
+  }
+
+  const onVideoEdited = async (blob, ext) => {
+    setEditVideo(null)
     setSending(true)
     try {
-      const url = await uploadFile(file, file.name.split('.').pop() || 'mp4')
+      const url = await uploadFile(blob, ext)
       if (url) await send({ type: 'video', file_url: url })
     } finally {
       setSending(false)
@@ -186,8 +192,14 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
                 />
               )}
               {m.type === 'video' && (
-                <div className="bubble-video">
-                  <VideoPlayer url={m.file_url} />
+                <div
+                  className="bubble-video video-thumb clickable"
+                  onClick={() => setLightbox({ url: m.file_url, video: true })}
+                >
+                  <video src={m.file_url + '#t=0.1'} preload="metadata" muted playsInline />
+                  <div className="video-bigplay">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
                 </div>
               )}
               {m.type === 'audio' && <VoicePlayer url={m.file_url} mine={m.sender_id === myId} />}
@@ -239,6 +251,14 @@ export default function ChatWindow({ myId, peer, bg, onCall, onBack }) {
           file={editPhoto}
           onCancel={() => setEditPhoto(null)}
           onDone={onPhotoEdited}
+        />
+      )}
+
+      {editVideo && (
+        <VideoEditor
+          file={editVideo}
+          onCancel={() => setEditVideo(null)}
+          onDone={onVideoEdited}
         />
       )}
 

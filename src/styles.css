@@ -974,3 +974,62 @@ input { font-family: inherit; }
   color: var(--text-dim);
   text-align: center;
 }
+
+/* ==================== ÏĞÅÂÜŞ ÂÈÄÅÎ Â ×ÀÒÅ ==================== */
+.bubble-video.video-thumb {
+  position: relative;
+  width: 240px;
+  max-width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  line-height: 0;
+}
+.bubble-video.video-thumb video {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+}
+.video-thumb .video-bigplay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+.video-thumb .video-bigplay svg {
+  width: 46px;
+  height: 46px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 50%;
+  padding: 12px;
+  box-sizing: content-box;
+  transition: transform 0.15s;
+}
+.video-thumb:hover .video-bigplay svg { transform: scale(1.1); }
+.video-large .video-frame video { max-height: 70vh; }
+
+/* ==================== ĞÅÄÀÊÒÎĞ ÂÈÄÅÎ ==================== */
+.editor-preview video {
+  max-width: 100%;
+  max-height: 40vh;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+  background: #000;
+}
+.trim-progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.trim-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 4px;
+  transition: width 0.2s;
+}

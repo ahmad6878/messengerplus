@@ -48,7 +48,17 @@ export default function VideoPlayer({ url, large }) {
           playsInline
           muted={muted}
           onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
+          onLoadedMetadata={(e) => {
+            const v = e.currentTarget
+            if (isFinite(v.duration)) { setDuration(v.duration); return }
+            // webm от MediaRecorder часто без длительности — вычисляем
+            v.currentTime = 1e6
+            v.ontimeupdate = () => {
+              v.ontimeupdate = null
+              setDuration(v.duration)
+              v.currentTime = 0
+            }
+          }}
           onEnded={() => setPlaying(false)}
         />
         {!playing && (
